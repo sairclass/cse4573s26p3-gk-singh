@@ -39,6 +39,29 @@ def detect_faces(img: torch.Tensor) -> List[List[float]]:
 
     ##### YOUR IMPLEMENTATION STARTS HERE #####
 
+    if img.dim() != 3:
+        return detection_results
+
+    if img.shape[0] == 3:
+        img_hwc = img.permute(1, 2, 0).contiguous()
+    else:
+        img_hwc = img.contiguous()
+
+    if img_hwc.dtype != torch.uint8:
+        img_hwc = img_hwc.to(torch.uint8)
+
+    img_np = img_hwc.cpu().numpy()
+
+    # Returns boxes as (top, right, bottom, left)
+    face_locations = face_recognition.face_locations(img_np)
+
+    for (top, right, bottom, left) in face_locations:
+        x = float(left)
+        y = float(top)
+        w = float(right - left)
+        h = float(bottom - top)
+        detection_results.append([x, y, w, h])
+
     return detection_results
 
 
