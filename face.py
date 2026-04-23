@@ -50,16 +50,24 @@ def detect_faces(img: torch.Tensor) -> List[List[float]]:
     if img_hwc.dtype != torch.uint8:
         img_hwc = img_hwc.to(torch.uint8)
 
-    img_np = img_hwc.cpu().numpy()
+    scale = 1.0
+    if img_hwc.shape[0] < 300 or img_hwc.shape[1] < 300:
+        scale = 2.0
+        img_hwc = torch.nn.functional.interpolate(
+            img_hwc.permute(2, 0, 1).unsqueeze(0).float(),
+            scale_factor=scale,
+            mode='bilinear',
+            align_corners=False
+        ).squeeze(0).permute(1, 2, 0).to(torch.uint8)
 
-    # Returns boxes
+    img_np = img_hwc.cpu().numpy()
     face_locations = face_recognition.face_locations(img_np)
 
     for (top, right, bottom, left) in face_locations:
-        x = float(left)
-        y = float(top)
-        w = float(right - left)
-        h = float(bottom - top)
+        x = float(left) / scale
+        y = float(top) / scale
+        w = float(right - left) / scale
+        h = float(bottom - top) / scale
         detection_results.append([x, y, w, h])
 
     return detection_results
